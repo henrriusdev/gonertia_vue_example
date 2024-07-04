@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/js/app.js', 'resources/css/app.css'],
-            ssr: 'resources/js/ssr.js', // Habilitar SSR
+            ssr: 'resources/js/ssr.js', // Enable SSR
             publicDirectory: 'public',
             buildDirectory: 'bootstrap',
             refresh: true,
@@ -14,7 +14,7 @@ export default defineConfig({
         vue(),
     ],
     build: {
-        ssr: true, // Habilitar SSR
+        ssr: true, // Enable SSR
         outDir: 'bootstrap',
         rollupOptions: {
             input: 'resources/js/ssr.js',
@@ -22,7 +22,7 @@ export default defineConfig({
                 entryFileNames: 'assets/[name].js',
                 chunkFileNames: 'assets/[name].js',
                 assetFileNames: 'assets/[name][extname]',
-                manualChunks: undefined, // Desactiva el hashing de nombres
+                manualChunks: undefined, // Disable automatic chunk splitting
             },
         },
     },
