@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	inertia "github.com/romsar/gonertia"
 	"log"
 	"net/http"
 	"os"
 	"path"
+	"strings"
+
+	inertia "github.com/romsar/gonertia"
 )
 
 func main() {
@@ -22,6 +24,39 @@ func main() {
 }
 
 func initInertia() *inertia.Inertia {
+	viteHotFile := "./public/hot"
+	rootViewFile := "resources/views/root.html"
+
+	// check if laravel-vite-plugin is running in dev mode (it puts a "hot" file in the public folder)
+	_, err := os.Stat(viteHotFile)
+	if err == nil {
+		i, err := inertia.NewFromFile(
+			rootViewFile,
+			inertia.WithSSR(),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		i.ShareTemplateFunc("vite", func(entry string) (string, error) {
+			content, err := os.ReadFile(viteHotFile)
+			if err != nil {
+				return "", err
+			}
+			url := strings.TrimSpace(string(content))
+			if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
+				url = url[strings.Index(url, ":")+1:]
+			} else {
+				url = "//localhost:8080"
+			}
+			if entry != "" && !strings.HasPrefix(entry, "/") {
+				entry = "/" + entry
+			}
+			return url + entry, nil
+		})
+		return i
+	}
+
+	// laravel-vite-plugin not running in dev mode, use build manifest file
 	manifestPath := "./public/build/manifest.json"
 
 	// check if the manifest file exists, if not, rename it
@@ -35,7 +70,7 @@ func initInertia() *inertia.Inertia {
 	}
 
 	i, err := inertia.NewFromFile(
-		"resources/views/root.html",
+		rootViewFile,
 		inertia.WithVersionFromFile(manifestPath),
 		inertia.WithSSR(),
 	)
@@ -82,7 +117,6 @@ func homeHandler(i *inertia.Inertia) http.Handler {
 		err := i.Render(w, r, "Home/Index", inertia.Props{
 			"text": "Inertia.js with Vue.js and Go! 💙",
 		})
-
 		if err != nil {
 			handleServerErr(w, err)
 			return
